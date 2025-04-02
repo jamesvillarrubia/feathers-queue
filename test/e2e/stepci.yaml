@@ -1,4 +1,4 @@
-name: Queue Service Tests
+name: Task Queue Service Tests
 version: 1.0.0
 
 env:
@@ -6,141 +6,143 @@ env:
   debug: true
 
 tests:
-  queue-service:
+  task-queue-service:
     steps:
-      - name: Create Basic Queue Message with Exact Response
+      - name: Create Basic Task
         http:
-          url: ${{env.baseUrl}}/pubsub
+          url: ${{env.baseUrl}}/tasks
           method: POST
           headers:
             Content-Type: application/json
           json:
-            metadata:
+            type: "test-task"
+            data:
+              test: "data"
+            options:
               priority: 5
-            payload:
-              service: test-service
-              action: create
-              queueName: basic-test-queue
-              data:
-                test: data
+              queueName: "basic-test-queue"
         expect:
           status: 201
           json:
             id: "!string"
-            metadata:
+            type: "test-task"
+            data:
+              test: "data"
+            options:
               priority: 5
-              messageId: "!string"
-              timestamp: "!number"
-              retryCount: 0
-              maxRetries: 3
               queueName: "basic-test-queue"
-            payload:
-              service: "test-service"
-              action: "create"
-              queueName: "basic-test-queue"
-              data:
-                test: "data"
             status: "pending"
             processingHistory: []
 
-      - name: Create High Priority Message
+      - name: Create High Priority Task
         http:
-          url: ${{env.baseUrl}}/pubsub
+          url: ${{env.baseUrl}}/tasks
           method: POST
           headers:
             Content-Type: application/json
           json:
-            metadata:
+            type: "priority-task"
+            data:
+              priority: "high"
+            options:
               priority: 1
-            payload:
-              service: test-service
-              action: create
-              queueName: priority-test-queue
-              data:
-                priority: high
+              queueName: "priority-test-queue"
         expect:
           status: 201
           json:
-            metadata:
+            id: "!string"
+            type: "priority-task"
+            data:
+              priority: "high"
+            options:
               priority: 1
+              queueName: "priority-test-queue"
+            status: "pending"
+            processingHistory: []
 
-      - name: Create Scheduled Message
+      - name: Create Scheduled Task
         http:
-          url: ${{env.baseUrl}}/pubsub
+          url: ${{env.baseUrl}}/tasks
           method: POST
           headers:
             Content-Type: application/json
           json:
-            metadata:
+            type: "scheduled-task"
+            data:
+              scheduled: true
+            options:
               priority: 5
+              queueName: "scheduled-test-queue"
               scheduledFor: "{{add timestamp 5000}}"
-            payload:
-              service: test-service
-              action: create
-              queueName: push-test-queue
-              data:
-                scheduled: true
         expect:
           status: 201
           json:
-            metadata:
+            id: "!string"
+            type: "scheduled-task"
+            data:
+              scheduled: true
+            options:
+              priority: 5
+              queueName: "scheduled-test-queue"
               scheduledFor: "!number"
+            status: "pending"
+            processingHistory: []
 
-      - name: Create Message with Invalid Service
+      - name: Create Exactly-Once Task
         http:
-          url: ${{env.baseUrl}}/pubsub
+          url: ${{env.baseUrl}}/tasks
           method: POST
           headers:
             Content-Type: application/json
           json:
-            metadata:
-              priority: 5
-            payload:
-              service: non-existent-service
-              action: create
-              queueName: basic-test-queue
-              data:
-                test: data
+            type: "exactly-once-task"
+            data:
+              idempotent: true
+            options:
+              exactlyOnce: true
+              queueName: "exactly-once-queue"
         expect:
-          status: 400
+          status: 201
           json:
-            message: "!string"
+            id: "!string"
+            type: "exactly-once-task"
+            data:
+              idempotent: true
+            options:
+              exactlyOnce: true
+              queueName: "exactly-once-queue"
+            status: "pending"
+            processingHistory: []
 
-      - name: Create Message with Invalid Action
+      - name: List Tasks
         http:
-          url: ${{env.baseUrl}}/pubsub
-          method: POST
+          url: ${{env.baseUrl}}/tasks
+          method: GET
           headers:
             Content-Type: application/json
-          json:
-            metadata:
-              priority: 5
-            payload:
-              service: test-service
-              action: invalid-action
-              queueName: basic-test-queue
-              data:
-                test: data
         expect:
-          status: 400
+          status: 200
           json:
-            message: "!string"
-        log:
-          - name: Request URL
-            value: "{{request.url}}"
-          - name: Request Method
-            value: "{{request.method}}"
-          - name: Request Headers
-            value: "{{request.headers}}"
-          - name: Request Body
-            value: "{{request.body}}"
-          - name: Response Status
-            value: "{{response.status}}"
-          - name: Response Headers
-            value: "{{response.headers}}"
-          - name: Response Body
-            value: "{{response.body}}"
-          - name: Full Request
-            value: "{{request}}"
-          - name: Full Response
-            value: "{{response}}" 
+            total: "!number"
+            limit: "!number"
+            skip: "!number"
+            data: "!array"
+
+      - name: Get Task by ID
+        http:
+          url: ${{env.baseUrl}}/tasks/{{steps[0].response.json.id}}
+          method: GET
+          headers:
+            Content-Type: application/json
+        expect:
+          status: 200
+          json:
+            id: "{{steps[0].response.json.id}}"
+            type: "test-task"
+            data:
+              test: "data"
+            options:
+              priority: 5
+              queueName: "basic-test-queue"
+            status: "!string"
+            processingHistory: "!array" 

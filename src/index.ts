@@ -1,22 +1,26 @@
 /**
- * @sera/feathers-pubsub
- *
- * A FeathersJS service for Google Cloud Pub/Sub integration that provides a robust
- * queue service for handling asynchronous message processing. This module enables
- * seamless integration between FeathersJS applications and Google Cloud Pub/Sub,
- * supporting both PULL and PUSH subscription modes.
- *
- * Key features include:
- * - Configurable message processing with retries and dead letter queues
- * - Support for message priorities and scheduling
- * - Comprehensive error handling and monitoring
- * - Flexible configuration through FeathersJS app settings
- * - Support for both PULL and PUSH subscription modes
- * - Message batching and processing optimization
- *
- * The service can be configured through the FeathersJS app settings, allowing
- * consumers to define their own configuration structure and Pub/Sub settings.
+ * @feathers-cloud/task-queue
+ * 
+ * Main entry point for the task queue library.
+ * Exports all core components and interfaces.
  */
 
-export * from './queue/queue.class';
-export * from './queue/queue.schema';
+// Core interfaces
+export * from './core/interfaces/queue.interface';
+export * from './core/interfaces/worker.interface';
+
+// Core types
+export * from './core/types/task.types';
+
+// Core classes
+export * from './core/queue/base-queue.class';
+export * from './core/queue/queue-manager.class';
+export * from './core/worker/base-worker.class';
+export * from './core/worker/worker-manager.class';
+
+// Feathers services
+export * from './feathers/queue.service';
+export * from './feathers/worker.service';
+
+// Provider implementations will be exported from their respective directories
+// e.g., './providers/gcp', './providers/aws', './providers/azure'

@@ -205,15 +205,6 @@ export class QueueService<ServiceParams extends QueueParams = QueueParams> {
     }
   }
 
-  async find(_params?: ServiceParams): Promise<Queue[]> {
-    return [];
-  }
-
-  async get(_id: Id, _params?: ServiceParams): Promise<Queue> {
-    throw new MethodNotAllowed(
-      'Message status tracking is not supported. Use GCP Console or API to check message status.'
-    );
-  }
 
   /**
    * Creates a new queue message and publishes it to the specified queue
@@ -299,6 +290,22 @@ export class QueueService<ServiceParams extends QueueParams = QueueParams> {
     }
   }
 
+
+  /**
+   * Default methods that are not supported
+   */
+  async find(_params?: ServiceParams): Promise<Queue[]> {
+    throw new MethodNotAllowed(
+      'Message status tracking is not supported. Use GCP Console or API to check message status.'
+    );
+  } 
+
+  async get(_id: Id, _params?: ServiceParams): Promise<Queue> {
+    throw new MethodNotAllowed(
+      'Message status tracking is not supported. Use GCP Console or API to check message status.'
+    );
+  }
+
   async patch(_id: NullableId, _data: QueuePatch, _params?: ServiceParams): Promise<Queue> {
     throw new MethodNotAllowed(
       'Message status updates are not supported. Use GCP Console or API to manage messages.'
@@ -308,6 +315,12 @@ export class QueueService<ServiceParams extends QueueParams = QueueParams> {
   async remove(_id: NullableId, _params?: ServiceParams): Promise<Queue> {
     throw new MethodNotAllowed(
       'Message deletion is not supported. Use GCP Console or API to manage messages.'
+    );
+  }
+
+  async update(_id: NullableId, _data: QueuePatch, _params?: ServiceParams): Promise<Queue> {
+    throw new MethodNotAllowed(
+      'Message updates are not supported. Use GCP Console or API to manage messages.'
     );
   }
 
@@ -407,12 +420,43 @@ export class QueueService<ServiceParams extends QueueParams = QueueParams> {
   }
 
   private listenForMessages(): void {
-    // Set up message listeners for all queues
-    for (const [queueName, _connection] of this.queueConnections) {
-      // For push subscriptions, we don't need to set up message listeners
-      // The messages will be pushed to our configured endpoint
-      logQueueService(`Queue ${queueName} configured for push-based subscription`);
+    const config = this.app.get(this.configPath) as Config;
+    if (!config) {
+      logQueueService('No configuration found for queue service');
+      return;
     }
+
+    // Set up message listeners for all queues
+    Object.entries(config.queues).forEach(([queueName, queueConfig]) => {
+      // Skip setting up listeners if processing is disabled
+      if (queueConfig.process === false) {
+        logQueueService(`Processing disabled for queue: ${queueName}`);
+        return;
+      }
+
+      const connection = this.queueConnections.get(queueName);
+      if (!connection) {
+        logQueueService(`No connection found for queue: ${queueName}`);
+        return;
+      }
+
+      const { subscription } = connection;
+
+      // Set up message listener
+      subscription.on('message', async (message) => {
+        try {
+          const data = JSON.parse(message.data.toString());
+          await this.handlePushedMessage(data, { query: { queueName } });
+        } catch (error) {
+          logQueueService(`Error processing message from queue ${queueName}:`, error);
+        }
+      });
+
+      // Set up error listener
+      subscription.on('error', (error) => {
+        logQueueService(`Error in subscription for queue ${queueName}:`, error);
+      });
+    });
   }
 
   /**

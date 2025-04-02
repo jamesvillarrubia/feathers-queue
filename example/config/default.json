@@ -14,33 +14,59 @@
     "apiEndpoint": "http://pubsub:8085",
     "queues": {
       "basic-test-queue": {
+        "name": "basic-test-queue",
         "topic": "basic-test-queue",
         "subscription": "basic-test-queue-sub",
-        "maxRetries": 3,
-        "retryDelay": 60,
-        "messageTimeout": 300,
-        "batchSize": 10
+        "process": true,
+        "ackDeadlineSeconds": 30,
+        "messageRetentionDuration": "7d",
+        "enableMessageOrdering": true,
+        "retryPolicy": {
+          "minimumBackoff": "10s",
+          "maximumBackoff": "600s"
+        },
+        "deadLetterPolicy": {
+          "deadLetterTopic": "basic-test-queue-dlq",
+          "maxDeliveryAttempts": 5
+        }
       },
       "priority-test-queue": {
+        "name": "priority-test-queue",
         "topic": "priority-test-queue",
         "subscription": "priority-test-queue-sub",
-        "maxRetries": 3,
-        "retryDelay": 60,
-        "messageTimeout": 300,
-        "batchSize": 10,
-        "priorityLevels": ["high", "normal", "low"]
+        "process": true,
+        "ackDeadlineSeconds": 30,
+        "messageRetentionDuration": "7d",
+        "enableMessageOrdering": true,
+        "retryPolicy": {
+          "minimumBackoff": "10s",
+          "maximumBackoff": "600s"
+        },
+        "deadLetterPolicy": {
+          "deadLetterTopic": "priority-test-queue-dlq",
+          "maxDeliveryAttempts": 5
+        }
       },
       "push-test-queue": {
+        "name": "push-test-queue",
         "topic": "push-test-queue",
         "subscription": "push-test-queue-sub",
-        "maxRetries": 3,
-        "retryDelay": 30,
-        "messageTimeout": 60,
-        "batchSize": 100,
-        "pushEndpoint": "http://app:3030/push-handler",
-        "deadLetter": {
-          "topic": "push-test-queue-dlq",
-          "subscription": "push-test-queue-dlq-sub"
+        "process": true,
+        "ackDeadlineSeconds": 30,
+        "messageRetentionDuration": "7d",
+        "pushConfig": {
+          "pushEndpoint": "http://app:3030/push-handler",
+          "attributes": {
+            "queueName": "push-test-queue"
+          }
+        },
+        "retryPolicy": {
+          "minimumBackoff": "10s",
+          "maximumBackoff": "600s"
+        },
+        "deadLetterPolicy": {
+          "deadLetterTopic": "push-test-queue-dlq",
+          "maxDeliveryAttempts": 5
         }
       }
     }

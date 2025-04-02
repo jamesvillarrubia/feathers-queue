@@ -82,7 +82,7 @@ describe('Queue Integration Tests', () => {
 
   describe('Message Management', () => {
     it('should reject find operation', async () => {
-      await expect(queueService.find()).resolves.toEqual([]);
+      await expect(queueService.find()).rejects.toThrow(MethodNotAllowed);
     });
 
     it('should reject get operation', async () => {

@@ -1,4 +1,4 @@
-import { PubSub, Topic, Subscription, GetTopicResponse, CreateSubscriptionResponse } from '@google-cloud/pubsub';
+import { PubSub, Topic, Subscription, GetTopicResponse, CreateSubscriptionResponse, CreateSubscriptionOptions } from '@google-cloud/pubsub';
 // createSubscription(name: string, options?: CreateSubscriptionOptions): Promise<CreateSubscriptionResponse>;
 import debug from 'debug';
 import type { QueueConfig, QueueConnection } from './queue.class';
@@ -40,7 +40,6 @@ export async function initializeQueue(
 
       const topicName = queueConfig.topic;
       const subscriptionName = queueConfig.subscription;
-      let subscription: Subscription;
 
       // Check if topic exists
       const [topics] = await pubsub.getTopics();
@@ -50,7 +49,11 @@ export async function initializeQueue(
 
       let topic: Topic;
       if (!topicExists) {
-        const [newTopic] = await pubsub.createTopic(topicName) as GetTopicResponse;
+        const [newTopic] = await pubsub.createTopic({
+          name: topicName,
+          labels: queueConfig.labels,
+          messageStoragePolicy: queueConfig.messageStoragePolicy,
+        });
         topic = newTopic;
         log(`Created topic: ${topic.name}`);
       } else {
@@ -66,12 +69,12 @@ export async function initializeQueue(
 
       // Create dead letter topic if configured
       let deadLetterTopic: Topic | null = null;
-      if (queueConfig.deadLetterTopic) {
-        const deadLetterTopicName = queueConfig.deadLetterTopic;
+      if (queueConfig.deadLetterPolicy?.deadLetterTopic) {
+        const deadLetterTopicName = queueConfig.deadLetterPolicy.deadLetterTopic;
         const deadLetterTopicExists = topics.some(t => t.name.endsWith(deadLetterTopicName));
 
         if (!deadLetterTopicExists) {
-          const [newTopic] = await pubsub.createTopic(deadLetterTopicName) as GetTopicResponse;
+          const [newTopic] = await pubsub.createTopic(deadLetterTopicName);
           deadLetterTopic = newTopic;
           log(`Created dead letter topic: ${deadLetterTopic.name}`);
         } else {
@@ -79,42 +82,47 @@ export async function initializeQueue(
         }
       }
 
+      let subscription: Subscription;
       if (!subscriptionExists) {
-        // Configure subscription options with retry policy and dead letter queue
-        const subscriptionOptions: any = {
-          pushConfig: queueConfig.pushEndpoint
-            ? {
-                pushEndpoint: queueConfig.pushEndpoint,
-              }
-            : undefined,
+        // Create subscription with retry policy
+        const subscriptionOptions: CreateSubscriptionOptions = {
+          ackDeadlineSeconds: queueConfig.ackDeadlineSeconds || 30,
+          messageRetentionDuration: { seconds: 7 * 24 * 60 * 60 }, // 7 days in seconds
+          enableMessageOrdering: queueConfig.enableMessageOrdering || true,
+          retryPolicy: {
+            minimumBackoff: { seconds: 10 },
+            maximumBackoff: { seconds: 600 },
+          },
+          deadLetterPolicy: queueConfig.deadLetterPolicy ? {
+            deadLetterTopic: queueConfig.deadLetterPolicy.deadLetterTopic,
+            maxDeliveryAttempts: queueConfig.deadLetterPolicy.maxDeliveryAttempts,
+          } : undefined,
+          pushConfig: queueConfig.pushEndpoint ? {
+            pushEndpoint: queueConfig.pushEndpoint,
+          } : undefined,
         };
 
-        // Configure retry policy with exponential backoff
-        if (queueConfig.maxRetries !== undefined) {
-          subscriptionOptions.retryPolicy = {
-            minimumBackoff: {
-              seconds: queueConfig.retryDelay || 10,
-              nanos: 0,
-            },
-            maximumBackoff: {
-              seconds: (queueConfig.retryDelay || 10) * 10,
-              nanos: 0,
-            },
-          };
-        }
-
-        // Configure dead letter policy if a dead letter topic is specified
-        if (deadLetterTopic) {
-          subscriptionOptions.deadLetterPolicy = {
-            deadLetterTopic: deadLetterTopic.name,
-            maxDeliveryAttempts: queueConfig.maxRetries || 5,
-          };
-        }
-
-        // Create subscription with configured options
-        const result = await topic.createSubscription(subscriptionName, subscriptionOptions);
-        const [newSubscription] = result as unknown as [Subscription, any];
+        const [newSubscription] = await topic.createSubscription(subscriptionName, subscriptionOptions);
         subscription = newSubscription;
+
+        // Configure retry policy if specified
+        if (queueConfig.maxDeliveryAttempts !== undefined) {
+          await subscription.setMetadata({
+            retryPolicy: {
+              minimumBackoff: {
+                seconds: 10,
+              },
+              maximumBackoff: {
+                seconds: 600,
+              },
+            },
+            deadLetterPolicy: queueConfig.deadLetterPolicy ? {
+              deadLetterTopic: queueConfig.deadLetterPolicy.deadLetterTopic,
+              maxDeliveryAttempts: queueConfig.maxDeliveryAttempts,
+            } : undefined,
+          });
+        }
+
         log(`Created subscription: ${subscription.name}`);
       } else {
         subscription = topic.subscription(subscriptionName);

@@ -59,23 +59,38 @@ export const QueueSchema = Type.Object({
 });
 
 export const QueueConfigSchema = Type.Object({
+  // Basic configuration
   name: Type.String(),
   topic: Type.String(),
   subscription: Type.String(),
-  deadLetterTopic: Type.Optional(Type.String()),
-  deadLetterSubscription: Type.Optional(Type.String()),
-  maxRetries: Type.Optional(Type.Number()),
-  retryDelay: Type.Optional(Type.Number()),
-  maxRetryDelay: Type.Optional(Type.Number()),
-  minRetryDelay: Type.Optional(Type.Number()),
-  maxDeliveryAttempts: Type.Optional(Type.Number()),
+  process: Type.Optional(Type.Boolean()),
+
+  // Topic configuration
+  labels: Type.Optional(Type.Record(Type.String(), Type.String())),
+  messageStoragePolicy: Type.Optional(Type.Object({
+    allowedPersistenceRegions: Type.Array(Type.String())
+  })),
+
+  // Subscription configuration
+  pushConfig: Type.Optional(Type.Object({
+    pushEndpoint: Type.String(),
+    attributes: Type.Optional(Type.Record(Type.String(), Type.String())),
+    oidcToken: Type.Optional(Type.Object({
+      serviceAccountEmail: Type.String(),
+      audience: Type.String()
+    }))
+  })),
   ackDeadlineSeconds: Type.Optional(Type.Number()),
   messageRetentionDuration: Type.Optional(Type.String()),
-  pushEndpoint: Type.Optional(Type.String()),
-  pushAuth: Type.Optional(Type.Object({
-    type: Type.String(),
-    credentials: Type.Any(),
+  enableMessageOrdering: Type.Optional(Type.Boolean()),
+  deadLetterPolicy: Type.Optional(Type.Object({
+    deadLetterTopic: Type.String(),
+    maxDeliveryAttempts: Type.Number()
   })),
+  retryPolicy: Type.Optional(Type.Object({
+    minimumBackoff: Type.String(),
+    maximumBackoff: Type.String()
+  }))
 });
 
 export type Queue = {
@@ -106,25 +121,29 @@ export type Queue = {
   }>;
 };
 
-export type QueueConfig = {
+export interface QueueConfig {
   name: string;
   topic: string;
   subscription: string;
-  deadLetterTopic?: string;
-  deadLetterSubscription?: string;
-  maxRetries?: number;
-  retryDelay?: number;
-  maxRetryDelay?: number;
-  minRetryDelay?: number;
+  process?: boolean;
   maxDeliveryAttempts?: number;
   ackDeadlineSeconds?: number;
   messageRetentionDuration?: string;
   pushEndpoint?: string;
-  pushAuth?: {
-    type: string;
-    credentials: any;
+  labels?: Record<string, string>;
+  messageStoragePolicy?: {
+    allowedPersistenceRegions: string[];
   };
-};
+  enableMessageOrdering?: boolean;
+  retryPolicy?: {
+    minimumBackoff?: string;
+    maximumBackoff?: string;
+  };
+  deadLetterPolicy?: {
+    deadLetterTopic: string;
+    maxDeliveryAttempts: number;
+  };
+}
 
 export type QueueQuery = {
   status?: QueueStatus;

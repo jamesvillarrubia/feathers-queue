@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { runFromFile } from '@stepci/runner'
 import path from 'path'
 
@@ -24,7 +24,6 @@ describe('StepCI Tests', async () => {
   
   // Create a test for each step in each test
   result.tests.forEach(test => {
-    
     describe(test.id || test.name || 'unnamed', () => {
       test.steps.forEach(step => {
         const typedStep = step as StepResult;
