@@ -7,14 +7,14 @@
 
 import { Id, NullableId, Params, ServiceInterface, Application } from '@feathersjs/feathers';
 import { BadRequest, MethodNotAllowed } from '@feathersjs/errors';
-import { Task, TaskOptions } from '../core/types/task.types';
-import { QueueQuery } from '../core/schemas/queue.schema';
-import { debugService } from '../core/utils/debug';
-import { FeathersQueueConfig } from 'feathers-queue';
+import { Task, TaskOptions } from '../core/task.types';
+import { QueueQuery } from '../core/queue.schema';
+import { debugService } from '../utils/debug';
+import { LibraryConfig } from '../core/queue.types';
 
 export interface QueueRouterOptions {
   app: Application;
-  config: FeathersQueueConfig;
+  config: LibraryConfig;
 }
 
 export interface QueueRouterParams extends Params<QueueQuery> {}
@@ -43,7 +43,7 @@ export class QueueRouter<ServiceParams extends QueueRouterParams = QueueRouterPa
    * @returns The queue to use for this task
    */
   private getQueueForTask(task: Task, options?: TaskOptions): any {
-    const queueName = options?.queueName || task.type || this.defaultQueueName;
+    const queueName = options?.queueName || task.queueName || this.defaultQueueName;
     
     if (this.queues[queueName]) {
       return this.queues[queueName];

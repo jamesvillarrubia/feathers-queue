@@ -82,6 +82,7 @@ Develop a **cloud-agnostic task queue** for **Feathers.js**, initially focusing 
 - Types should be colocated with their related functionality
 - Use descriptive type names that reflect their purpose
 - Document complex types with JSDoc comments
+- Avoid unnecessary types. If something can be accomplished with just a type or an inteface, don't create both.  Let some types be implied.  Only use types where explicit naming and abstraction make sense because the type is reused.  This means types should follow the DRY and WET principals. 
 
 ### Service Structure
 

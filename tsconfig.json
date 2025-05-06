@@ -18,8 +18,5 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "hold", "exampleOLD", "dist", "example", "test", "**/*.test.ts"],
-  "references": [
-    { "path": "./example" }
-  ]
+  "exclude": ["node_modules", "hold", "exampleOLD", "dist", "example", "test", "**/*.test.ts"]
 }

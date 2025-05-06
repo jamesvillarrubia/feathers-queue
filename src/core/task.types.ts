@@ -6,11 +6,13 @@
 
 export interface Task {
   id?: string;
-  type: string; // The queue name
-  payload: any; // The data that gets sent to the target URL
+  name: string;
+  type?: string;
+  payload: any;
   options?: TaskOptions;
   receiptHandle?: string; // AWS SQS specific
   popReceipt?: string; // Azure specific
+  queueName?: string; // Override the default queue name
 }
 
 export interface TaskOptions {

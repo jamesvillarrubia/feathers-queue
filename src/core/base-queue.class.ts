@@ -6,16 +6,16 @@
  */
 
 import { Application } from '@feathersjs/feathers';
-import { QueueInterface, SingleQueueConfig } from '../interfaces/queue.interface';
-import { Task, TaskOptions } from '../types/task.types';
+import { QueueInterface, QueueConfig } from './queue.types';
+import { Task, TaskOptions } from './task.types';
 
 export abstract class BaseQueue implements QueueInterface {
   protected app: Application;
   protected configPath: string;
-  protected config: SingleQueueConfig
+  protected config: QueueConfig;
   protected isInitialized: boolean = false;
 
-  constructor(options: SingleQueueConfig) {
+  constructor(options: QueueConfig) {
     this.app = options.app || null as unknown as Application;
     this.configPath = options.name || 'default';
     // Initialize config with defaults
@@ -29,7 +29,7 @@ export abstract class BaseQueue implements QueueInterface {
   /**
    * Initialize the queue with configuration
    */
-  async initialize(config: SingleQueueConfig): Promise<void> {
+  async initialize(config: QueueConfig): Promise<void> {
     if (this.isInitialized) {
       throw new Error('Queue already initialized');
     }
@@ -99,7 +99,7 @@ export abstract class BaseQueue implements QueueInterface {
     if (!task.id) {
       throw new Error('Task must have an id');
     }
-    if (!task.type) {
+    if (!task.name) {
       throw new Error('Task must have a type (queue name)');
     }
     if (!task.payload) {

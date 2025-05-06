@@ -4,47 +4,48 @@
  * AWS SQS implementation of the QueueInterface.
  */
 
-import { BaseQueue } from '../../core/queue/base-queue.class';
-import { QueueInterface, QueueOptions, SingleQueueConfig } from '../../core/interfaces/queue.interface';
-import { Task, TaskResult, TaskOptions } from '../../core/types/task.types';
+import { BaseQueue } from '../../core/base-queue.class';
+import { QueueInterface, QueueConfig, LibraryConfig } from '../../core/queue.types';
+import { Task, TaskResult, TaskOptions } from '../../core/task.types';
 import { SQSClient, SendMessageCommand, ReceiveMessageCommand, DeleteMessageCommand, GetQueueAttributesCommand } from '@aws-sdk/client-sqs';
 import { Application } from '@feathersjs/feathers';
+import { GCPQueueOptions } from '../gcp/gcp-queue.class';
+
+export interface AWSQueueConfig extends QueueConfig {
+  region: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  queueUrl?: string;
+}
 
 export class AWSQueue extends BaseQueue implements QueueInterface {
   private client: SQSClient;
   private queueUrl: string;
-  protected config: SingleQueueConfig;
 
-  constructor(options: QueueOptions) {
+  constructor(options: AWSQueueConfig) {
     super(options);
     
-    // Extract AWS-specific configuration
-    this.config = options.config || {
-      provider: 'aws',
-      projectId: '',
-      location: '',
-      allowedDomains: [],
-      maxRetries: 3,
-      retryDelay: 1000
-    };
-    
+    // Create AWS SQS client
     this.client = new SQSClient({
-      region: this.config.region,
-      credentials: this.config.accessKeyId && this.config.secretAccessKey
+      region: options.region,
+      credentials: options.accessKeyId && options.secretAccessKey
         ? {
-            accessKeyId: this.config.accessKeyId,
-            secretAccessKey: this.config.secretAccessKey,
+            accessKeyId: options.accessKeyId,
+            secretAccessKey: options.secretAccessKey,
           }
         : undefined,
     });
-    this.queueUrl = this.config.queueUrl || `https://sqs.${this.config.region}.amazonaws.com/queue/${this.config.name}`;
+
+    // Set queue URL
+    this.queueUrl = options.queueUrl || `https://sqs.${options.region}.amazonaws.com/queue/${options.name}`;
   }
 
   protected async validateConfig(): Promise<void> {
     if (!this.config.name) {
       throw new Error('Queue name is required');
     }
-    if (!this.config.region) {
+    const awsConfig = this.config as AWSQueueConfig;
+    if (!awsConfig.region) {
       throw new Error('AWS region is required');
     }
   }

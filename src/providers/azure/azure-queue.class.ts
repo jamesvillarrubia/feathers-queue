@@ -1,38 +1,38 @@
-import { BaseQueue } from '../../core/queue/base-queue.class';
-import { QueueInterface, QueueOptions, SingleQueueConfig } from '../../core/interfaces/queue.interface';
-import { Task, TaskResult, TaskOptions } from '../../core/types/task.types';
+/**
+ * @feathers-cloud/task-queue
+ * 
+ * Azure Storage Queue implementation of the QueueInterface.
+ */
+
+import { BaseQueue } from '../../core/base-queue.class';
+import { QueueInterface, QueueConfig } from '../../core/queue.types';
+import { Task, TaskOptions } from '../../core/task.types';
 import { QueueClient, QueueServiceClient } from '@azure/storage-queue';
 import { Application } from '@feathersjs/feathers';
 
+export interface AzureQueueConfig extends QueueConfig {
+  connectionString: string;
+  queueUrl?: string;
+}
+
 export class AzureQueue extends BaseQueue implements QueueInterface {
   private client: QueueClient;
-  protected options: QueueOptions;
 
-  constructor(options: QueueOptions) {
-    // Create a SingleQueueConfig from QueueOptions
-    const config: SingleQueueConfig = {
-      provider: options.provider,
-      projectId: options.projectId || 'azure',
-      location: options.location || 'azure',
-      name: options.queueName || 'default',
-      connectionString: options.connectionString,
-      app: options.app
-    };
-    
-    super(config);
-    this.options = options;
+  constructor(options: AzureQueueConfig) {
+    super(options);
     
     const queueServiceClient = QueueServiceClient.fromConnectionString(
-      options.connectionString || ''
+      options.connectionString
     );
-    this.client = queueServiceClient.getQueueClient(this.config.name || 'default');
+    this.client = queueServiceClient.getQueueClient(options.name);
   }
 
   protected async validateConfig(): Promise<void> {
     if (!this.config.name) {
       throw new Error('Queue name is required');
     }
-    if (!this.options.connectionString) {
+    const azureConfig = this.config as AzureQueueConfig;
+    if (!azureConfig.connectionString) {
       throw new Error('Azure connection string is required');
     }
   }

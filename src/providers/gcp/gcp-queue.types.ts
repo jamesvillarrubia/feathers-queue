@@ -5,7 +5,7 @@
  * This file contains types that are specific to Google Cloud Tasks.
  */
 
-import { QueueStats, SingleQueueConfig } from '../../core/interfaces/queue.interface';
+import { QueueStats, QueueConfig } from '../../core/queue.types';
 
 export interface GCPQueueStats extends QueueStats {
   // Additional GCP-specific stats
@@ -25,7 +25,7 @@ export interface GCPQueueStats extends QueueStats {
   };
 }
 
-export interface GCPQueueOptions extends SingleQueueConfig {
+export interface GCPQueueOptions extends QueueConfig {
   projectId: string;
   location: string;
   serviceAccountEmail?: string;

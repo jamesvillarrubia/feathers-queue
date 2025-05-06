@@ -6,18 +6,18 @@
  */
 
 // Export core interfaces and types
-export * from './core/interfaces/queue.interface';
+export * from './core/queue.types';
 // export * from './core/interfaces/worker.interface';
 
 // Export core types
-export * from './core/types/task.types';
+export * from './core/task.types';
 
 // Export core schemas
-export * from './core/schemas/queue.schema';
+export * from './core/queue.schema';
 
 // Export queue implementations
 export * from './providers/gcp/gcp-queue.class';
-export * from './core/queue/base-queue.class';
+export * from './core/base-queue.class';
 export * from './feathers/queue.router';
 
 // Export Feathers service
@@ -25,7 +25,7 @@ export * from './feathers/queue.service';
 // export * from './feathers/worker.service';
 
 // Export utility functions
-export * from './core/utils/debug';
+export * from './utils/debug';
 
 // Providers
 // export * from '../hold/queue-manager.class';

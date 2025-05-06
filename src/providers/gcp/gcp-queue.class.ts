@@ -1,11 +1,11 @@
-import { BaseQueue } from '../../core/queue/base-queue.class';
-import { QueueInterface, QueueStats } from '../../core/interfaces/queue.interface';
-import { FeathersQueueConfig, SingleQueueConfig } from '../../core/interfaces/queue.interface';
-import { Task, TaskOptions } from '../../core/types/task.types';
+import { BaseQueue } from '../../core/base-queue.class';
+import { QueueInterface, QueueStats } from '../../core/queue.types';
+import { LibraryConfig, QueueConfig } from '../../core/queue.types';
+import { Task, TaskOptions } from '../../core/task.types';
 import { CloudTasksClient, protos } from '@google-cloud/tasks';
 import { credentials } from '@grpc/grpc-js';
 import { URL } from 'url';
-import { debugGCP, debugTask, logTaskCreation, formatDebug } from '../../core/utils/debug';
+import { debugGCP, debugTask, logTaskCreation, formatDebug } from '../../utils/debug';
 import { Application } from '@feathersjs/feathers';
 import { GCPQueueStats } from './gcp-queue.types';
 
@@ -39,7 +39,7 @@ type IQueue = protos.google.cloud.tasks.v2.IQueue & {
   };
 };
 
-export interface GCPQueueOptions extends SingleQueueConfig {
+export interface GCPQueueOptions extends QueueConfig {
   projectId: string;
   location: string;
   serviceAccountEmail?: string;
@@ -63,7 +63,7 @@ export interface GCPQueueOptions extends SingleQueueConfig {
  * @param config The FeathersQueueConfig containing queue configurations
  * @returns A map of queue instances keyed by queue name
  */
-export function queueFactory(config: FeathersQueueConfig): Record<string, GCPQueue> {
+export function queueFactory(config: LibraryConfig): Record<string, GCPQueue> {
   const queues: Record<string, GCPQueue> = {};
   
   // Create a queue for each entry in the queues object
@@ -75,7 +75,7 @@ export function queueFactory(config: FeathersQueueConfig): Record<string, GCPQue
       ...config.defaults,
       ...queueConfig,
       name: queueName, // Ensure the queue name is set correctly
-    } as GCPQueueOptions;
+    } as unknown as GCPQueueOptions;
     
     queues[queueName] = new GCPQueue(mergedConfig);
   }
@@ -101,13 +101,15 @@ export class GCPQueue extends BaseQueue implements QueueInterface {
     const queueName = options.queueName || 'default';
     
     // Create a QueueOptions object from the SingleQueueConfig
-    const queueOptions: FeathersQueueConfig = {
+    const queueOptions: LibraryConfig = {
       app: options.app as Application,
       routing: false,
       provider: 'gcp' as const,
+      name: options.name || 'default',
       defaults: {
         ...options,
-        queueName
+        queueName,
+        defaultQueue: queueName
       },
       queues: {
         [options.name || 'default']: {
@@ -125,7 +127,7 @@ export class GCPQueue extends BaseQueue implements QueueInterface {
     this.taskHandlerUrl = options.taskHandlerUrl;
     this.handlerRootPath = options.handlerRootPath;
     this.allowedDomains = options.allowedDomains || [];
-    this.defaultQueueName = options.defaultQueue || 'default';
+    this.defaultQueueName = options.queueName || 'default';
     this.queueName = options.name || this.defaultQueueName;
     this.enhancedStats = options.enhancedStats || false;
     
@@ -169,7 +171,7 @@ export class GCPQueue extends BaseQueue implements QueueInterface {
    * Initialize multiple queues from a FeathersQueueConfig
    * @param config The FeathersQueueConfig containing queue configurations
    */
-  public initializeQueues(config: FeathersQueueConfig): void {
+  public initializeQueues(config: LibraryConfig): void {
     this.queues = queueFactory(config);
     this.defaultQueueName = config.defaults?.defaultQueue || 'default';
   }
@@ -353,7 +355,7 @@ export class GCPQueue extends BaseQueue implements QueueInterface {
             url: taskHandlerUrl,
             headers: {
               'Content-Type': 'application/json',
-              'X-Task-Type': task.type,
+              'X-Task-Type': task.type || '',
               'X-Task-Priority': (options?.priority || 5).toString(),
             },
             body: Buffer.from(JSON.stringify(task.payload || {})).toString('base64'),
@@ -473,8 +475,8 @@ export class GCPQueue extends BaseQueue implements QueueInterface {
   }
 } 
 
-export const getGCPQueueOptions = (app: Application, queueName?: string): FeathersQueueConfig => {
-  const feathersQueueConfig = app.get('feathers-queue') as FeathersQueueConfig;
+export const getGCPQueueOptions = (app: Application, queueName?: string): LibraryConfig => {
+  const feathersQueueConfig = app.get('feathers-queue') as LibraryConfig;
   const isRouting = !!feathersQueueConfig.routing;
 
   if(isRouting) {

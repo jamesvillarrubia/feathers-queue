@@ -7,16 +7,15 @@
 
 import { Id, NullableId, Params, Application, ServiceInterface } from '@feathersjs/feathers';
 import { BadRequest, MethodNotAllowed } from '@feathersjs/errors';
-import { GCPQueue,  queueFactory } from '../providers/gcp/gcp-queue.class';
-import { Task, TaskOptions } from '../core/types/task.types';
-import { debugService } from '../core/utils/debug';
-import { FeathersQueueConfig } from '../core/interfaces/queue.interface';
-import type { QueueQuery } from '../core/schemas/queue.schema';
-
+import { GCPQueue,  GCPQueueOptions,  queueFactory } from '../providers/gcp/gcp-queue.class';
+import { Task, TaskOptions } from '../core/task.types';
+import { debugService } from '../utils/debug';
+import type { QueueQuery } from '../core/queue.schema';
+import { LibraryConfig } from '../core/queue.types';
 
 export interface QueueServiceOptions {
   app: Application;
-  config: FeathersQueueConfig;
+  config: LibraryConfig;
 }
 
 
@@ -39,7 +38,7 @@ export class QueueService<ServiceParams extends QueueParams = QueueParams>
     
     if (options.config.provider === 'gcp') {
       // Create the main queue instance
-      this.queue = new GCPQueue(options.config.defaults);
+      this.queue = new GCPQueue(options.config.defaults as unknown as GCPQueueOptions);
       
       // Initialize the queues if routing is enabled
       if (options.config.routing) {
@@ -177,6 +176,6 @@ export class QueueService<ServiceParams extends QueueParams = QueueParams>
 export function getOptions(app: Application): QueueServiceOptions {
   return {
     app: app,
-    config: app.get('feathers-queue') as FeathersQueueConfig
+    config: app.get('feathers-queue') as LibraryConfig
   };
 }
