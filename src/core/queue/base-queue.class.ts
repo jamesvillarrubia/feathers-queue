@@ -6,33 +6,38 @@
  */
 
 import { Application } from '@feathersjs/feathers';
-import { QueueInterface, QueueOptions, QueueConfig } from '../interfaces/queue.interface';
+import { QueueInterface, SingleQueueConfig } from '../interfaces/queue.interface';
 import { Task, TaskOptions } from '../types/task.types';
 
 export abstract class BaseQueue implements QueueInterface {
   protected app: Application;
   protected configPath: string;
-  protected config: QueueConfig = {
-    name: 'default',
-    maxRetries: 3,
-    retryDelay: 1000,
-  };
+  protected config: SingleQueueConfig
   protected isInitialized: boolean = false;
 
-  constructor(options: QueueOptions) {
-    this.app = options.app;
-    this.configPath = options.configPath || 'queue';
+  constructor(options: SingleQueueConfig) {
+    this.app = options.app || null as unknown as Application;
+    this.configPath = options.name || 'default';
+    // Initialize config with defaults
+    this.config = {
+      maxRetries: 3,
+      retryDelay: 1000,
+      ...options
+    };
   }
 
   /**
    * Initialize the queue with configuration
    */
-  async initialize(config: QueueConfig): Promise<void> {
+  async initialize(config: SingleQueueConfig): Promise<void> {
     if (this.isInitialized) {
       throw new Error('Queue already initialized');
     }
 
+    // Merge with defaults ensuring maxRetries and retryDelay have values
     this.config = {
+      maxRetries: 3,
+      retryDelay: 1000,
       ...this.config,
       ...config,
     };
@@ -95,7 +100,7 @@ export abstract class BaseQueue implements QueueInterface {
       throw new Error('Task must have an id');
     }
     if (!task.type) {
-      throw new Error('Task must have a type');
+      throw new Error('Task must have a type (queue name)');
     }
     if (!task.payload) {
       throw new Error('Task must have a payload');
@@ -107,8 +112,8 @@ export abstract class BaseQueue implements QueueInterface {
    */
   protected mergeTaskOptions(options?: TaskOptions): TaskOptions {
     return {
-      maxRetries: this.config.maxRetries,
-      retryDelay: this.config.retryDelay,
+      maxRetries: this.config.maxRetries || 3,
+      retryDelay: this.config.retryDelay || 1000,
       ...options,
     };
   }

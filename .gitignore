@@ -17,6 +17,7 @@ coverage/
 *.swp
 *.swo
 *~
+exampleOLD/
 
 # Environment files
 .env

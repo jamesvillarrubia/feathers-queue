@@ -5,25 +5,23 @@
  */
 
 export interface Task {
-  id: string;
-  type: string;
-  payload: any;
-  metadata?: {
-    priority?: number;
-    scheduledFor?: number;
-    retryCount?: number;
-    maxRetries?: number;
-    retryDelay?: number;
-    createdAt?: number;
-    updatedAt?: number;
-  };
+  id?: string;
+  type: string; // The queue name
+  payload: any; // The data that gets sent to the target URL
+  options?: TaskOptions;
+  receiptHandle?: string; // AWS SQS specific
+  popReceipt?: string; // Azure specific
 }
 
 export interface TaskOptions {
   priority?: number;
-  scheduledFor?: number;
+  scheduledFor?: number; // Unix timestamp in milliseconds
   maxRetries?: number;
-  retryDelay?: number;
+  retryDelay?: number; // Delay in milliseconds between retries
+  queueName?: string; // Override the default queue name
+  exactlyOnce?: boolean; // Whether to ensure exactly-once processing
+  targetUrl?: string; // URL to send the task to
+  rootPath?: string; // Root path to append to the handler URL
 }
 
 export interface TaskResult {

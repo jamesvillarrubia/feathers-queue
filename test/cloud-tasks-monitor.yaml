@@ -1,0 +1,70 @@
+name: Cloud Tasks Monitor
+description: Monitors incoming Cloud Tasks traffic and validates task delivery
+
+scenarios:
+  - name: Monitor Cloud Tasks
+    description: Watches for incoming Cloud Tasks and validates their structure
+    steps:
+      - name: Wait for Cloud Task
+        description: Listens for incoming Cloud Tasks POST requests
+        request:
+          method: POST
+          url: ${NGROK_URL}/tasks  # Replace with your actual endpoint
+          headers:
+            Content-Type: application/json
+        validate:
+          - status: 200
+          - headers:
+              - X-CloudTasks-QueueName: 
+                  type: string
+                  required: true
+              - X-CloudTasks-TaskName:
+                  type: string
+                  required: true
+              - X-CloudTasks-ExecutionName:
+                  type: string
+                  required: true
+              - X-CloudTasks-RetryCount:
+                  type: string
+                  required: true
+          - body:
+              type: object
+              required: true
+              properties:
+                message:
+                  type: string
+                  required: true
+        retry:
+          maxAttempts: 10
+          interval: 5000  # 5 seconds between attempts
+        timeout: 300000   # 5 minutes total timeout
+
+      - name: Log Task Details
+        description: Logs the received task details for debugging
+        script: |
+          console.log('Received Cloud Task:');
+          console.log('Queue Name:', response.headers['x-cloudtasks-queuename']);
+          console.log('Task Name:', response.headers['x-cloudtasks-taskname']);
+          console.log('Execution Name:', response.headers['x-cloudtasks-executionname']);
+          console.log('Retry Count:', response.headers['x-cloudtasks-retrycount']);
+          console.log('Payload:', response.body);
+
+      - name: Validate Task Structure
+        description: Ensures the task has the expected structure
+        validate:
+          - body:
+              type: object
+              required: true
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+
+config:
+  variables:
+    NGROK_URL: ${NGROK_URL}  # Set this in your environment or .env file
+  retry:
+    maxAttempts: 3
+    interval: 1000
+  timeout: 300000  # 5 minutes 

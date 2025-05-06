@@ -1,0 +1,20 @@
+{
+    "file": "local.json",
+    "host": "localhost",
+    "port": 3030,
+    "public": "public",
+    "feathers-queue": {
+      "routing": true,
+      "defaults": {
+        "provider": "gcp",
+        "projectId": "feathers-queue",
+        "location": "us-central1",
+        "taskHandlerUrl": "https://e449-18-29-208-174.ngrok-free.app/books",
+        "allowedDomains": ["localhost", "e449-18-29-208-174.ngrok-free.app"]
+      },
+      "emulator": {
+        "host": "localhost",
+        "port": "8123"
+      }
+    }
+  } 

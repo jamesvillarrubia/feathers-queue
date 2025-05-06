@@ -1,68 +1,76 @@
 {
-  "name": "@feathers-cloud/task-queue",
+  "name": "feathers-queue",
   "version": "0.1.0",
-  "description": "A cloud-agnostic task queue for Feathers.js with support for GCP, AWS, and Azure",
+  "description": "Cloud-agnostic task queue for Feathers.js",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
+    "dev": "cd example && npm run dev",
+    "ngrok": "cd example && npm run dev && npx ngrok http 3030",
     "build": "tsc",
-    "test": "jest",
-    "lint": "eslint src/**/*.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:e2e": "vitest run test/e2e",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
-    "preversion": "npm run lint",
-    "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "prepare2": "npm run build",
+    "dev:ngrok": "cd example && npm run dev && npx ngrok http 3030",
+    "docker:up": "docker-compose up -d cloud-tasks-emulator",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f cloud-tasks-emulator",
+    "docker:status": "docker-compose ps",
+    "test:docker": "npm run docker:up && npm run test:e2e && npm run docker:down",
+    "docker:full:up": "docker-compose up -d",
+    "docker:full:down": "docker-compose down",
+    "docker:full:logs": "docker-compose logs -f",
+    "docker:full:status": "docker-compose ps",
+    "test:docker:full": "npm run docker:full:up && sleep 10 && npm run test:e2e && npm run docker:full:down",
+    "test:all": "npm run test:unit && DOCKER_ENV=true npm run test:integration && npm run test:docker:full",
+    "test:docker:all": "npm run docker:full:up && sleep 10 && npm run test:unit && DOCKER_ENV=true npm run test:integration && npm run test:e2e && npm run docker:full:down"
   },
   "keywords": [
     "feathers",
     "feathersjs",
     "queue",
-    "task-queue",
+    "task",
     "cloud",
     "gcp",
     "aws",
     "azure"
   ],
-  "author": "Your Name",
+  "author": "James Villarrubia",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/feathers-cloud/task-queue.git"
-  },
-  "bugs": {
-    "url": "https://github.com/feathers-cloud/task-queue/issues"
-  },
-  "homepage": "https://github.com/feathers-cloud/task-queue#readme",
   "dependencies": {
-    "@feathersjs/feathers": "^5.0.0",
-    "@feathersjs/errors": "^5.0.0",
-    "@google-cloud/tasks": "^4.0.0",
     "@aws-sdk/client-sqs": "^3.0.0",
-    "@azure/storage-queue": "^12.0.0",
-    "debug": "^4.3.4",
-    "uuid": "^9.0.0"
+    "@azure/storage-queue": "12.26.0",
+    "@feathersjs/errors": "5.0.33",
+    "@feathersjs/feathers": "^5.0.0",
+    "@feathersjs/typebox": "5.0.33",
+    "@grpc/grpc-js": "1.13.2",
+    "debug": "4.4.0",
+    "express": "5.1.0"
   },
   "devDependencies": {
-    "@types/debug": "^4.1.8",
-    "@types/jest": "^29.5.0",
-    "@types/node": "^18.15.0",
-    "@types/uuid": "^9.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.40.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "jest": "^29.5.0",
-    "prettier": "^2.8.8",
-    "ts-jest": "^29.1.0",
-    "typescript": "^5.0.0"
+    "@feathersjs/express": "5.0.33",
+    "@feathersjs/feathers": "5.0.33",
+    "@google-cloud/tasks": "6.0.1",
+    "@stepci/runner": "^2.0.7",
+    "@types/debug": "^4.0.0",
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^2.0.0",
+    "typescript": "^4.0.0",
+    "vitest": "^3.0.0"
   },
   "peerDependencies": {
     "@feathersjs/feathers": "^5.0.0"
   },
-  "engines": {
-    "node": ">=16.0.0"
-  }
+  "files": [
+    "lib",
+    "src"
+  ]
 }

@@ -7,29 +7,63 @@
 
 import { Application } from '@feathersjs/feathers';
 import { Task, TaskOptions, TaskResult } from '../types/task.types';
+import { ChannelCredentials } from '@grpc/grpc-js';
 
-export interface QueueOptions {
+export interface FeathersQueueConfig {
   app: Application;
-  configPath?: string;
-  provider?: 'gcp' | 'aws' | 'azure' | 'local';
+  routing: boolean;
+  provider: 'gcp' | 'aws' | 'azure';
+  defaults: SingleQueueConfig;
+  queues: Record<string, SingleQueueConfig>;
+  
+  // Emulator settings
+  emulator?: {
+    host: string;
+    port: string;
+    credentials?: ChannelCredentials;
+  };
 }
 
-export interface QueueConfig {
-  name: string;
+export interface SingleQueueConfig {
+  app?: Application;
+  name?: string;
+  defaultQueue?: string;
+  allowedDomains?: string[];
+  provider: string;
+  projectId: string;
+  location: string;
   maxRetries?: number;
   retryDelay?: number;
   deadLetterQueue?: string;
-  rateLimit?: {
-    maxTasksPerSecond?: number;
-    maxConcurrentTasks?: number;
+  serviceAccountEmail?: string;
+  taskHandlerUrl?: string;
+  handlerRootPath?: string;
+  emulator?: {
+    host: string;
+    port: string;
   };
+  // AWS specific properties
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  queueUrl?: string;
+  // Azure specific properties
+  connectionString?: string;
+  queueName?: string;
+}
+
+export interface QueueStats {
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
 }
 
 export interface QueueInterface {
   /**
    * Initialize the queue with configuration
    */
-  initialize(config: QueueConfig): Promise<void>;
+  initialize(config: SingleQueueConfig): Promise<void>;
 
   /**
    * Add a task to the queue
@@ -54,12 +88,7 @@ export interface QueueInterface {
   /**
    * Get queue statistics
    */
-  getStats(): Promise<{
-    pending: number;
-    processing: number;
-    completed: number;
-    failed: number;
-  }>;
+  getStats(): Promise<QueueStats>;
 
   /**
    * Clean up resources

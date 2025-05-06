@@ -1,74 +1,37 @@
 {
+  "file": "default.json",
   "host": "localhost",
   "port": 3030,
-  "public": "../public/",
-  "origins": [
-    "http://localhost:3030"
-  ],
-  "paginate": {
-    "default": 10,
-    "max": 50
-  },
-  "pubsub": {
-    "projectId": "test-project",
-    "apiEndpoint": "http://pubsub:8085",
+  "public": "public",
+  "feathers-queue": {
+    "routing": true,
+    "defaults": {
+      "provider": "gcp",
+      "projectId": "your-project-id",
+      "location": "us-central1",
+      "defaultQueue": "default",
+      "queueName": "default",
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "allowedDomains": ["localhost", "example.com"]
+    },
     "queues": {
-      "basic-test-queue": {
-        "name": "basic-test-queue",
-        "topic": "basic-test-queue",
-        "subscription": "basic-test-queue-sub",
-        "process": true,
-        "ackDeadlineSeconds": 30,
-        "messageRetentionDuration": "7d",
-        "enableMessageOrdering": true,
-        "retryPolicy": {
-          "minimumBackoff": "10s",
-          "maximumBackoff": "600s"
-        },
-        "deadLetterPolicy": {
-          "deadLetterTopic": "basic-test-queue-dlq",
-          "maxDeliveryAttempts": 5
-        }
+      "default": {
+        "maxRetries": 3,
+        "retryDelay": 1000
       },
-      "priority-test-queue": {
-        "name": "priority-test-queue",
-        "topic": "priority-test-queue",
-        "subscription": "priority-test-queue-sub",
-        "process": true,
-        "ackDeadlineSeconds": 30,
-        "messageRetentionDuration": "7d",
-        "enableMessageOrdering": true,
-        "retryPolicy": {
-          "minimumBackoff": "10s",
-          "maximumBackoff": "600s"
-        },
-        "deadLetterPolicy": {
-          "deadLetterTopic": "priority-test-queue-dlq",
-          "maxDeliveryAttempts": 5
-        }
+      "high-priority": {
+        "maxRetries": 5,
+        "retryDelay": 500
       },
-      "push-test-queue": {
-        "name": "push-test-queue",
-        "topic": "push-test-queue",
-        "subscription": "push-test-queue-sub",
-        "process": true,
-        "ackDeadlineSeconds": 30,
-        "messageRetentionDuration": "7d",
-        "pushConfig": {
-          "pushEndpoint": "http://app:3030/push-handler",
-          "attributes": {
-            "queueName": "push-test-queue"
-          }
-        },
-        "retryPolicy": {
-          "minimumBackoff": "10s",
-          "maximumBackoff": "600s"
-        },
-        "deadLetterPolicy": {
-          "deadLetterTopic": "push-test-queue-dlq",
-          "maxDeliveryAttempts": 5
-        }
+      "low-priority": {
+        "maxRetries": 2,
+        "retryDelay": 2000
       }
+    },
+    "emulator": {
+      "host": "localhost",
+      "port": "8123"
     }
   }
-}
+} 

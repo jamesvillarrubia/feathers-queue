@@ -22,6 +22,10 @@ components:
         data:
           type: object
           description: Task-specific data
+          properties:
+            targetUrl:
+              type: string
+              description: URL to send the task to. Must be from an allowed domain (localhost, ngrok.io, example.com, etc.)
         options:
           type: object
           properties:
@@ -50,6 +54,9 @@ components:
               type: boolean
               default: false
               description: Whether to ensure exactly-once processing
+            rootPath:
+              type: string
+              description: Root path to append to the handler URL
 
     TaskResponse:
       type: object
@@ -88,7 +95,7 @@ paths:
   /tasks:
     post:
       summary: Create a new task
-      description: Creates and enqueues a new task
+      description: Creates and enqueues a new task. The targetUrl must be from an allowed domain.
       operationId: createTask
       requestBody:
         required: true
@@ -96,6 +103,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Task'
+      parameters:
+        - name: rootPath
+          in: query
+          schema:
+            type: string
+          description: Root path to append to the handler URL
       responses:
         '201':
           description: Task created successfully
