@@ -14,4 +14,7 @@ services:
       - ./src:/app/src
     environment:
       - NODE_ENV=development
+      - CLOUD_TASKS_EMULATOR=true
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - GOOGLE_CLOUD_TASKS_EMULATOR_HOST=cloud-tasks-emulator:8123
     command: npm run dev 

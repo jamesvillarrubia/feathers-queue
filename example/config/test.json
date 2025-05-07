@@ -1,3 +1,30 @@
 {
-  "port": 8998
+  "file": "test.json",
+  "host": "localhost",
+  "port": 3030,
+  "public": "public",
+  "feathers-queue": {
+    "routing": true,
+    "defaults": {
+      "provider": "gcp",
+      "projectId": "test-project",
+      "location": "test-location",
+      "defaultQueue": "test-queue",
+      "queueName": "test-queue",
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "taskHandlerUrl": "http://localhost:3030/tasks",
+      "allowedDomains": ["localhost", "cloud-tasks-emulator"]
+    },
+    "queues": {
+      "test-queue": {
+        "maxRetries": 3,
+        "retryDelay": 1000
+      }
+    },
+    "emulator": {
+      "host": "cloud-tasks-emulator",
+      "port": "8123"
+    }
+  }
 }

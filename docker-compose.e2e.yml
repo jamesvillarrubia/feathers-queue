@@ -11,30 +11,46 @@ services:
       - GOOGLE_CLOUD_PROJECT=test-project
       - GOOGLE_CLOUD_TASKS_EMULATOR_HOST=0.0.0.0:8123
 
+  example-app:
+    build:
+      context: ./example
+      dockerfile: Dockerfile
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./dist:/app/node_modules/feathers-queue/dist
+      - ./example/src:/app/src
+    environment:
+      - NODE_ENV=test
+      - NODE_CONFIG_ENV=test
+      - DOCKER_ENV=true
+      - CLOUD_TASKS_EMULATOR=true
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - GOOGLE_CLOUD_TASKS_EMULATOR_HOST=cloud-tasks-emulator:8123
+      - DEBUG=queue:service,feathers*
+    depends_on:
+      - cloud-tasks-emulator
+    command: npm run dev
+
   test-app:
     image: node:20-alpine
     working_dir: /app
     volumes:
       - ./:/app
-    ports:
-      - '3030:3030'
     environment:
       - NODE_ENV=test
-      - PORT=3030
-      - NODE_CONFIG_ENV=docker
+      - DOCKER_ENV=true
       - CLOUD_TASKS_EMULATOR=true
       - GOOGLE_CLOUD_PROJECT=test-project
       - GOOGLE_CLOUD_TASKS_EMULATOR_HOST=cloud-tasks-emulator:8123
       - DEBUG=queue:service,feathers*
-      - DOCKER_ENV=true
     depends_on:
       - cloud-tasks-emulator
+      - example-app
     command: |
       sh -c " \
       cd /app && \
       sleep 10 && \
       npm install && \
       npm run build && \
-      cd ./example && \
-      npm install && \
-      cd .. && npm run test:integration"
+      npm run test:e2e" 

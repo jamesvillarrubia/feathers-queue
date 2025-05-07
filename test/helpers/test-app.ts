@@ -4,67 +4,45 @@ import { Application } from '@feathersjs/feathers';
 import { QueueService } from '../../src/feathers/queue.service';
 import { FeathersQueueConfig } from '../../src/core/interfaces/queue.interface';
 import { mockServiceAccount } from '../config/gcp-credentials';
-
-interface TestAppOptions {
-  useEmulator?: boolean;
-  emulatorConfig?: {
-    host: string;
-    port: string;
-    projectId: string;
-    location: string;
-  };
-}
+import { TestAppOptions, getTestConfig, setupTestEnvironment } from './test-config';
 
 /**
  * Creates a test Feathers application with the queue service configured
  */
 export const createTestApp = async (options: TestAppOptions = {}): Promise<Application> => {
   const app = express(feathers());
+  const config = getTestConfig(options);
 
-  // Set up emulator environment if needed
-  if (options.useEmulator) {
-    process.env.CLOUD_TASKS_EMULATOR = 'true';
-    process.env.GOOGLE_CLOUD_PROJECT = options.emulatorConfig?.projectId || 'test-project';
-    
-    if (options.emulatorConfig?.host && options.emulatorConfig?.port) {
-      process.env.GOOGLE_CLOUD_TASKS_EMULATOR_HOST = `${options.emulatorConfig.host}:${options.emulatorConfig.port}`;
-    }
-  }
+  // Set up test environment
+  setupTestEnvironment(options);
 
   // Configure the app with FeathersQueueConfig format
-  const queueConfig: FeathersQueueConfig = {
+  const queueConfig = {
     app,
     routing: false,
     provider: 'gcp',
     defaults: {
       provider: 'gcp',
-      projectId: options.emulatorConfig?.projectId || 'test-project',
-      location: options.emulatorConfig?.location || 'test-location',
-      queueName: 'test-queue',
-      name: 'test-queue',
+      projectId: config.projectId,
+      location: config.location,
+      queueName: config.queueName,
+      name: config.queueName,
       serviceAccountEmail: mockServiceAccount.client_email,
-      taskHandlerUrl: 'http://localhost:3030/tasks',
-      emulator: options.useEmulator ? {
-        host: options.emulatorConfig?.host || 'localhost',
-        port: options.emulatorConfig?.port || '8123'
-      } : undefined,
-      // Add required default values
+      taskHandlerUrl: config.taskHandlerUrl,
+      emulator: config.emulator,
       maxRetries: 3,
       retryDelay: 1000
     },
     queues: {
-      'test-queue': {
+      [config.queueName]: {
         provider: 'gcp',
-        projectId: options.emulatorConfig?.projectId || 'test-project',
-        location: options.emulatorConfig?.location || 'test-location',
-        queueName: 'test-queue',
-        name: 'test-queue',
+        projectId: config.projectId,
+        location: config.location,
+        queueName: config.queueName,
+        name: config.queueName,
         serviceAccountEmail: mockServiceAccount.client_email,
-        taskHandlerUrl: 'http://localhost:3030/tasks',
-        emulator: options.useEmulator ? {
-          host: options.emulatorConfig?.host || 'localhost',
-          port: options.emulatorConfig?.port || '8123'
-        } : undefined
+        taskHandlerUrl: config.taskHandlerUrl,
+        emulator: config.emulator
       }
     }
   };
@@ -72,9 +50,9 @@ export const createTestApp = async (options: TestAppOptions = {}): Promise<Appli
   app.set('feathers-queue', queueConfig);
 
   // Configure Express middleware
-  app.use(json());
-  app.use(urlencoded({ extended: true }));
-  app.use(errorHandler());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.errorHandler());
 
   // Configure services
   app.use('queue', new QueueService({

@@ -232,71 +232,138 @@ const stats = await app.service('gcp-queue-1').getStats();
 console.log('Queue stats:', stats);
 ```
 
-## Testing Framework
+## Testing
 
-Feathers Queue includes a comprehensive testing framework with multiple layers:
+The library supports three levels of testing, each with both local CLI and Docker-based execution options:
 
-### Unit Tests
+### Test Levels
 
-Unit tests verify the functionality of individual components in isolation, using mocks for external dependencies:
+1. **Unit Tests** (`test/unit/`)
+   - Tests individual components in isolation
+   - No external dependencies (emulator, app) required
+   - Uses mock implementations for all external services
+   - Run via `npm run test:unit`
 
-```bash
-npm run test:unit
+2. **Integration Tests** (`test/integration/`)
+   - Tests integration with Cloud Tasks emulator
+   - Two execution modes:
+     - Local CLI: Uses local emulator
+     - Docker: Uses containerized emulator
+   - Run via:
+     - `npm run test:integration` (local)
+     - `npm run test:integration:docker` (Docker)
+
+3. **E2E Tests** (`test/e2e/`)
+   - Tests full integration with example app
+   - Two execution modes:
+     - Local: Uses example app with ngrok for public URL
+     - Docker: Uses containerized example app
+   - Run via:
+     - `npm run test:e2e` (local)
+     - `npm run test:e2e:docker` (Docker)
+
+### Configuration Structure
+
+```
+test/
+├── config/
+│   ├── credentials.ts    # Mock credentials for testing
+├── helpers/
+│   ├── test-config.ts   # CLI-based test configuration
+│   ├── test-app.ts      # Test app setup helper
+├── unit/               # Unit tests
+├── integration/        # Integration tests
+└── e2e/               # E2E tests
 ```
 
-These tests ensure that core classes like `BaseQueue`, `GCPQueue`, and validation functions work correctly in isolation.
+### Configuration Management
 
-### Integration Tests
+1. **Unit/Integration Tests**
+   - Configuration defined in test files
+   - CLI overrides available via environment variables:
+     ```bash
+     TEST_PROJECT_ID=my-project
+     TEST_LOCATION=my-location
+     TEST_QUEUE_NAME=my-queue
+     TEST_TASK_HANDLER_URL=http://localhost:3030/tasks
+     TEST_EMULATOR_HOST=localhost
+     TEST_EMULATOR_PORT=8123
+     ```
 
-Integration tests verify that the components work together with the Feathers service layer:
+2. **E2E Tests**
+   - Uses example app's configuration in `/example/config/`
+   - Environment-specific configs:
+     - `test.json`: Test environment
+     - `docker.json`: Docker environment
+     - `local.json`: Local development
+
+### Running Tests
+
+1. **All Tests (Local)**
+   ```bash
+   npm run test:all
+   ```
+
+2. **All Tests (Docker)**
+   ```bash
+   npm run test:all:docker
+   ```
+
+3. **Individual Test Suites**
+   ```bash
+   # Unit tests
+   npm run test:unit
+
+   # Integration tests
+   npm run test:integration        # Local
+   npm run test:integration:docker # Docker
+
+   # E2E tests
+   npm run test:e2e               # Local
+   npm run test:e2e:docker        # Docker
+   ```
+
+### Docker Testing
+
+The library uses separate Docker Compose files for different testing scenarios:
+
+1. **Integration Testing** (`docker-compose.test.yml`)
+   - Runs integration tests with emulator
+   - No example app required
+
+2. **E2E Testing** (`docker-compose.e2e.yml`)
+   - Runs E2E tests with example app
+   - Includes both app and emulator
+
+### Live Testing with ngrok
+
+For testing with real Cloud Tasks:
+
+1. Start the example app:
+   ```bash
+   npm run test:live:start
+   ```
+
+2. Start ngrok in a separate terminal:
+   ```bash
+   npm run test:live:ngrok
+   ```
+
+3. Or run both concurrently:
+   ```bash
+   npm run test:live:with-ngrok
+   ```
+
+### CI/CD Integration
+
+The library includes CI-specific test commands:
 
 ```bash
-npm run test:integration
-```
+# Run all tests in CI environment
+npm run test:ci
 
-These tests wrap around the Feathers Service level and test the interaction between the queue service and queue implementations.
-
-### End-to-End (E2E) Tests
-
-E2E tests verify the complete flow using cloud provider emulators:
-
-```bash
-npm run test:e2e
-```
-
-These tests use the GCP Cloud Tasks emulator to test the complete flow from task creation to processing, without requiring actual cloud resources.
-
-### Live End-to-End Tests
-
-Live E2E tests verify the integration with real cloud resources:
-
-```bash
-npm run test:live-e2e
-```
-
-**Note:** These tests require actual GCP credentials and resources. They use ngrok to expose your local service to the internet for callback handling.
-
-### Running the Example App
-
-The `/example` directory contains a complete example application that demonstrates real-world usage:
-
-```bash
-cd example
-npm install
-npm run dev
-```
-
-For testing with real cloud providers, you can use environment variables or Docker:
-
-```bash
-# Using environment variables
-GCP_PROJECT_ID=your-project-id \
-GCP_LOCATION=us-central1 \
-GCP_SERVICE_ACCOUNT_EMAIL=your-service-account@example.com \
-npm run dev
-
-# Using Docker
-docker-compose up
+# Run all tests in Docker for CI
+npm run test:ci:docker
 ```
 
 ## FeathersJS Best Practices

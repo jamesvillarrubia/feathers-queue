@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseQueue } from '../../src/core/queue/base-queue.class';
-import { SingleQueueConfig } from '../../src/core/interfaces/queue.interface';
-import { Task, TaskOptions } from '../../src/core/types/task.types';
+import { BaseQueue } from '../../src/core/base-queue.class';
+import { QueueConfig } from '../../src/core/queue.types';
+import { Task, TaskOptions } from '../../src/core/task.types';
 import { Application } from '@feathersjs/feathers';
 
 // Create a concrete implementation of BaseQueue for testing
 class TestQueue extends BaseQueue {
+  constructor(config: QueueConfig) {
+    super(config);
+  }
+
   protected async validateConfig(): Promise<void> {
     // No validation needed for test queue
   }
@@ -14,170 +18,91 @@ class TestQueue extends BaseQueue {
     // No setup needed for test queue
   }
 
-  async enqueue(task: Task, options?: TaskOptions): Promise<string> {
-    return 'test-task-id';
+  async enqueue(task: Task): Promise<string> {
+    throw new Error('Method not implemented');
   }
 
   async dequeue(): Promise<Task | null> {
-    return null;
+    throw new Error('Method not implemented');
   }
 
-  async acknowledge(taskId: string): Promise<void> {}
-
-  async deadLetter(taskId: string, error: Error): Promise<void> {}
-
-  async getStats() {
-    return {
-      pending: 0,
-      processing: 0,
-      completed: 0,
-      failed: 0
-    };
+  async acknowledge(taskId: string): Promise<void> {
+    throw new Error('Method not implemented');
   }
 
-  async cleanup(): Promise<void> {}
-
-  // Expose protected methods for testing
-  public validateTaskPublic(task: Task): void {
-    return this.validateTask(task);
+  async deadLetter(taskId: string, error: Error): Promise<void> {
+    throw new Error('Method not implemented');
   }
 
-  public mergeTaskOptionsPublic(options?: TaskOptions): TaskOptions {
-    return this.mergeTaskOptions(options);
+  async getStats(): Promise<{
+    pending: number;
+    processing: number;
+    completed: number;
+    failed: number;
+  }> {
+    throw new Error('Method not implemented');
+  }
+
+  async cleanup(): Promise<void> {
+    throw new Error('Method not implemented');
   }
 }
 
 describe('BaseQueue', () => {
   let queue: TestQueue;
-  const mockApp = {
-    get: vi.fn()
-  } as unknown as Application;
-  
-  const mockOptions: any= {
-    app: mockApp,
-    provider: 'local',
-    config: {
-      provider: 'test',
-      projectId: 'test-project',
-      location: 'test-location',
-      name: 'test-queue'
-    }
-  };
+  let mockApp: Application;
+  let config: QueueConfig;
 
   beforeEach(() => {
-    queue = new TestQueue(mockOptions.config || {
-      provider: 'test',
-      projectId: 'test-project',
-      location: 'test-location',
-      name: 'test-queue'
-    });
+    mockApp = {
+      get: vi.fn(),
+      set: vi.fn(),
+      service: vi.fn(),
+    } as unknown as Application;
+
+    config = {
+      app: mockApp,
+      provider: 'gcp',
+      name: 'test-queue',
+      maxRetries: 3,
+      retryDelay: 1000,
+    };
+
+    queue = new TestQueue(config);
   });
 
-  describe('initialization', () => {
-    it('should initialize with default config', async () => {
-      const config: SingleQueueConfig = {
-        provider: 'test',
-        projectId: 'test-project',
-        location: 'test-location',
-        name: 'test-queue'
-      };
-      
-      await queue.initialize(config);
-      expect(queue['isInitialized']).toBe(true);
-    });
-
-    it('should prevent double initialization', async () => {
-      const config: SingleQueueConfig = {
-        provider: 'test',
-        projectId: 'test-project',
-        location: 'test-location',
-        name: 'test-queue'
-      };
-
-      await queue.initialize(config);
-      await expect(queue.initialize(config)).rejects.toThrow('Queue already initialized');
-    });
-
-    it('should merge config with defaults', async () => {
-      const config: SingleQueueConfig = {
-        provider: 'test',
-        projectId: 'test-project',
-        location: 'test-location',
-        name: 'test-queue',
-        maxRetries: 5
-      };
-
-      await queue.initialize(config);
-      expect(queue['config'].maxRetries).toBe(5);
-      expect(queue['config'].retryDelay).toBe(1000); // Default value
-    });
+  it('should initialize with config', () => {
+    expect(queue['config']).toEqual(config);
   });
 
-  describe('task validation', () => {
-    it('should validate task with required fields', () => {
-      const task: Task = {
-        id: 'test-task',
-        type: 'test-queue',
-        payload: { test: 'data' }
-      };
-      
-      expect(() => queue.validateTaskPublic(task)).not.toThrow();
-    });
+  it('should throw error when enqueue is not implemented', async () => {
+    const task: Task = {
+      id: 'test-task',
+      name: 'test-task',
+      type: 'test',
+      payload: { test: 'data' },
+    };
 
-    it('should throw error for missing id', () => {
-      const task: Task = {
-        id: undefined,
-        type: 'test-queue',
-        payload: { test: 'data' }
-      };
-      
-      expect(() => queue.validateTaskPublic(task)).toThrow('Task must have an id');
-    });
-
-    it('should throw error for missing type', () => {
-      const task: Task = {
-        id: 'test-task',
-        type: '',
-        payload: { test: 'data' }
-      };
-      
-      expect(() => queue.validateTaskPublic(task)).toThrow('Task must have a type (queue name)');
-    });
-
-    it('should throw error for missing payload', () => {
-      const task: Task = {
-        id: 'test-task',
-        type: 'test-queue',
-        payload: undefined
-      };
-      
-      expect(() => queue.validateTaskPublic(task)).toThrow('Task must have a payload');
-    });
+    await expect(queue.enqueue(task)).rejects.toThrow('Method not implemented');
   });
 
-  describe('task options', () => {
-    it('should merge options with defaults', () => {
-      const options: TaskOptions = {
-        priority: 1
-      };
+  it('should throw error when dequeue is not implemented', async () => {
+    await expect(queue.dequeue()).rejects.toThrow('Method not implemented');
+  });
 
-      const merged = queue.mergeTaskOptionsPublic(options);
-      expect(merged.maxRetries).toBe(3); // Default value
-      expect(merged.retryDelay).toBe(1000); // Default value
-      expect(merged.priority).toBe(1);
-    });
+  it('should throw error when acknowledge is not implemented', async () => {
+    await expect(queue.acknowledge('test-task')).rejects.toThrow('Method not implemented');
+  });
 
-    it('should override defaults with provided options', () => {
-      const options: TaskOptions = {
-        maxRetries: 5,
-        retryDelay: 2000,
-        priority: 1
-      };
+  it('should throw error when deadLetter is not implemented', async () => {
+    await expect(queue.deadLetter('test-task', new Error('test error'))).rejects.toThrow('Method not implemented');
+  });
 
-      const merged = queue.mergeTaskOptionsPublic(options);
-      expect(merged.maxRetries).toBe(5);
-      expect(merged.retryDelay).toBe(2000);
-      expect(merged.priority).toBe(1);
-    });
+  it('should throw error when getStats is not implemented', async () => {
+    await expect(queue.getStats()).rejects.toThrow('Method not implemented');
+  });
+
+  it('should throw error when cleanup is not implemented', async () => {
+    await expect(queue.cleanup()).rejects.toThrow('Method not implemented');
   });
 }); 

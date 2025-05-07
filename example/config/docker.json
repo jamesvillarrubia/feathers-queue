@@ -7,10 +7,20 @@
       "routing": true,
       "defaults": {
         "provider": "gcp",
-        "projectId": "feathers-queue",
-        "location": "us-central1",
-        "taskHandlerUrl": "https://app:3030/books",
-        "allowedDomains": ["localhost", "app", "e449-18-29-208-174.ngrok-free.app"]
+        "projectId": "test-project",
+        "location": "test-location",
+        "defaultQueue": "test-queue",
+        "queueName": "test-queue",
+        "maxRetries": 3,
+        "retryDelay": 1000,
+        "taskHandlerUrl": "http://localhost:3030/tasks",
+        "allowedDomains": ["localhost", "cloud-tasks-emulator"]
+      },
+      "queues": {
+        "test-queue": {
+          "maxRetries": 3,
+          "retryDelay": 1000
+        }
       },
       "emulator": {
         "host": "cloud-tasks-emulator",

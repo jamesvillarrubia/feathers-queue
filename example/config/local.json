@@ -13,7 +13,7 @@
         "allowedDomains": ["localhost", "e449-18-29-208-174.ngrok-free.app"]
       },
       "emulator": {
-        "host": "localhost",
+        "host": "cloud-tasks-emulator",
         "port": "8123"
       }
     }

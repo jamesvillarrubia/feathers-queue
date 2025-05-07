@@ -34,7 +34,7 @@ export const emulatorConfig: SingleQueueConfig = {
   
   // Emulator specific settings
   emulator: {
-    host: 'localhost',
+    host: process.env.DOCKER_ENV ? 'cloud-tasks-emulator' : 'localhost',
     port: '8123'
   }
 };
