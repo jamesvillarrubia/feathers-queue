@@ -12,13 +12,29 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3030
+      - NODE_CONFIG_ENV=docker
       - CLOUD_TASKS_EMULATOR=true
       - GOOGLE_CLOUD_PROJECT=test-project
       - GOOGLE_CLOUD_TASKS_EMULATOR_HOST=cloud-tasks-emulator:8123
       - DEBUG=queue:service,feathers*
     depends_on:
       - cloud-tasks-emulator
-    command: sh -c "cd /app && npm install && npm run build && cd ./example && npm install && npm start"
+    command: |
+      sh -c " \
+      cd /app && \
+      npm install && \
+      npm run build && \
+      cd ./example && \
+      rm ./config/local.json && \
+      rm -rf node_modules/feathers-queue && \
+      mkdir -p node_modules/feathers-queue/dist && \
+      cp -r ../dist/* node_modules/feathers-queue/dist/ && \
+      cp ../package.json node_modules/feathers-queue/ && \
+      cd node_modules/feathers-queue && \
+      ls -la dist/ && \
+      cd ../.. && \
+      npm install && \
+      npm start"
 
   cloud-tasks-emulator:
     image: ghcr.io/aertje/cloud-tasks-emulator:latest

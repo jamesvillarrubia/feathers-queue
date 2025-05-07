@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  example-app:
+    build:
+      context: ..
+      dockerfile: example/Dockerfile
+    ports:
+      - "3030:3030"
+    volumes:
+      # Mount the library's dist directory for live updates
+      - ../dist:/app/node_modules/feathers-queue/dist
+      # Mount the example app source for live updates
+      - ./src:/app/src
+    environment:
+      - NODE_ENV=development
+    command: npm run dev 

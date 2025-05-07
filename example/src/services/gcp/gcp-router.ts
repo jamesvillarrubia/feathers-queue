@@ -15,7 +15,8 @@ import {
 } from './gcp.schema';
 
 import type { Application, HookContext } from '../../declarations';
-import { QueueRouter, QueueRouterParams } from 'feathers-queue';
+import { LibraryConfig, QueueRouter, QueueRouterParams } from 'feathers-queue';
+import { QueueConfig } from 'feathers-queue';
 
 export const gcpRouterPath = 'gcp-router';
 export const gcpRouterMethods: Array<keyof QueueRouter> = ['find', 'get', 'create', 'patch', 'remove'];
@@ -25,14 +26,12 @@ export * from './gcp.schema';
 // A configure function that registers the service and its hooks via `app.configure`
 export const gcpRouter = (app: Application) => {  
   // Get the feathers-queue config
-  const feathersQueueConfig = app.get('feathers-queue');
+  const feathersQueueConfig = app.get('feathers-queue') as unknown as LibraryConfig;
   
   const queueRouter = new QueueRouter({
       app,
       config: {
-        ...feathersQueueConfig,
-        app,
-        provider: 'gcp'
+        ...feathersQueueConfig
       }
   });
     
